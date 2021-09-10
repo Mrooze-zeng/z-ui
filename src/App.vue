@@ -1,28 +1,30 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <table-demo :rowHeight="46">
+      <h1 class="title">with row height set</h1>
+    </table-demo>
+    <table-demo>
+      <h1 class="title">with row height unset</h1>
+    </table-demo>
   </div>
 </template>
-
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import TableDemo from "./table-demo.vue";
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    HelloWorld
-  }
-}
+    TableDemo,
+  },
+};
 </script>
 
-<style>
+<style scoped>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+.title {
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
 </style>

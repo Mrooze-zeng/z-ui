@@ -1,7 +1,4 @@
-// @ts-ignore
-// prettier-ignore
-const tpls = {".gitignore":"template/.gitignore","vue.config.js":"template/vue.config.js","build/create-packages-exports-plugin.js":"template/build/create-packages-exports-plugin.js","build/disable-eslint-check-plugin.js":"template/build/disable-eslint-check-plugin.js","build/prettier-default-options.json":"template/build/prettier-default-options.json","build/vue-use-packages-loader.js":"template/build/vue-use-packages-loader.js","build/vue-use-packages-plugin.js":"template/build/vue-use-packages-plugin.js","build/webpack.config.build.js":"template/build/webpack.config.build.js","packages/index.js":"template/packages/index.js","vue-service/createPackage.js":"template/vue-service/createPackage.js","vue-service/index.js":"template/vue-service/index.js","vue-service/updateTemplate.js":"template/vue-service/updateTemplate.js",".github/workflows/deploy.yml":"template/.github/workflows/deploy.yml"};
-const projectName ="z-ui";
+const projectName = "z-ui";
 
 const presetDir = "vue-cli-presets/vue2-component-repo-preset.git/generator";
 
@@ -18,19 +15,41 @@ const remotePreset =
 
 const loadRemotePreset = require("@vue/cli/lib/util/loadRemotePreset");
 
-const replaceFile = function (tpls = {},  target = "") {
+const replaceFile = function (tpls = {}, target = "") {
   for (const file in tpls) {
-    if(file.startsWith(".")){
-      continue
+    if (file.startsWith(".") && !file.startsWith(".github")) {
+      continue;
     }
     const buf = fs.readFileSync(path.resolve(target, tpls[file]));
     fs.writeFileSync(
       path.resolve(__dirname, "../", file),
-      ejs.render(buf.toString(), { tpls ,projectName}),
+      ejs.render(buf.toString(), { projectName: projectName }),
     );
 
     warn(`替换 ${file}`);
   }
+};
+
+const getTpls = async function (optons) {
+  const globby = await import("globby");
+  const baseDir = path.resolve(tplDir, "./template");
+
+  let _files = await globby.globby(["**/*"], {
+    cwd: baseDir,
+    dot: true,
+  });
+  let source = {};
+
+  let isExist = fs.existsSync(path.resolve(__dirname, "../.github"));
+
+  if (!isExist) {
+    _files = _files.filter((f) => f != ".github/workflows/deploy.yml");
+  }
+
+  _files.forEach((f) => {
+    source[f] = `template/${f}`;
+  });
+  return source;
 };
 
 module.exports = {
@@ -40,20 +59,17 @@ module.exports = {
     usage: "vue-cli-service updateTpl",
   },
   action: async function () {
-    if (fs.lstatSync(tplDir)) {
-      replaceFile(tpls, tplDir);
-    } else {
-      let presetDir;
-      const { plugins } = await loadRemotePreset(remotePreset);
-      for (const plugin in plugins) {
-        if (
-          plugin.includes("vue-cli-presets/vue2-component-repo-preset.git") &&
-          plugins[plugin]._isPreset
-        ) {
-          presetDir = path.resolve(plugin, "generator");
-        }
+    const tpls = await getTpls();
+    let presetDir;
+    const { plugins } = await loadRemotePreset(remotePreset, true);
+    for (const plugin in plugins) {
+      if (
+        plugin.includes("vue-cli-presets/vue2-component-repo-preset.git") &&
+        plugins[plugin]._isPreset
+      ) {
+        presetDir = path.resolve(plugin, "generator");
       }
-      replaceFile(tpls, presetDir);
     }
+    replaceFile(tpls, presetDir);
   },
 };
